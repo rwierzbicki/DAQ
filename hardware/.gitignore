@@ -1,23 +1,10 @@
-# Ignore everything...
-*
-
-# ...except
-!.gitignore
-
 # Altium files
-!design
+design/*
 !design/*.PcbDoc
 !design/*.PcbLib
 !design/*.PrjPcb
+!design/*.PrjPcbStructure
 !design/*.SchDoc
 !design/*.SchLib
 !design/jobs
 !design/jobs/*
-
-# Data sheets and other documentation
-!documentation
-!documentation/**/*
-
-# Release files
-!release
-!release/**/*
