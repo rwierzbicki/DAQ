@@ -8,3 +8,9 @@ design/*
 !design/*.SchLib
 !design/jobs
 !design/jobs/*
+
+simulations/*
+!simulations/*.asc
+!simulations/*.pdf
+!simulations/*.png
+!simulations/*.txt
