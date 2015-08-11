@@ -69,8 +69,8 @@ LD_FLAGS += -Wl,--start-group -lc -lgcc -lnosys -Wl,--end-group
 ############################################################
 # Targets: Actions
 ############################################################
-.SUFFIXES: .c .eep .h .hex .o .elf .s .S
-.PHONY: all bin elf flash clean
+.SUFFIXES: .bin .c .elf .eep .h .hex .o .elf .s .S
+.PHONY: all bin dep elf flash clean
 
 all: elf
 
@@ -87,6 +87,9 @@ erase:
 clean:
 	$(REMOVE) src/*.o src/**/*.o build/*.elf build/*.hex build/*.bin
 
+dep:
+	make -C libopencm3
+
 
 ############################################################
 # Targets: Output
@@ -102,7 +105,3 @@ $(BUILD_DIR)/$(PROJECT).bin: $(BUILD_DIR)/$(PROJECT).elf
 
 %.o: %.S
 	$(CC) $(AS_FLAGS) -c $< -o $@
-
-libopencm3:
-	git submodule update
-	make -C libopencm3
