@@ -17,15 +17,12 @@
   this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#include <libopencm3/stm32/rcc.h>
 
 int
 main(void)
 {
 	/* Initialize */
 
-	/* Set main clock to use external 8 MHz crystal */
-	rcc_clock_setup_hse_3v3(&hse_8mhz_3v3[CLOCK_3V3_168MHZ]);
 
 	/* Enable peripheral clocks */
 
