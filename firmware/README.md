@@ -24,16 +24,6 @@ To build the firmware, the following tools are required:
 
 ## Building
 
-Building the firmware requires three steps.
-
-Checkout the git submodules:
-
-    $ git submodule update --init
-
-Build the libopencm3 library:
-
-    $ make -C libopencm3
-
 Build the firmware:
 
     $ make
@@ -72,11 +62,6 @@ The following documents will be essential to DAQ firmware development:
 
 - **[STM32F407 Reference Manual][1]**: describes microcontroller core, memory,
   and all peripherals.
-
-- **[libopencm3 API Documentation][2]**: describes the hardware abstraction
-  layer (HAL) API provided by libopencm3. This allows us to call C functions
-  instead of manually setting bits in regiters to configure and use the on-chip
-  peripherals.
 
 - **[STM32F4 Programming Manual][3]**: describes programming model, instruction
   set, and core peripherals.
