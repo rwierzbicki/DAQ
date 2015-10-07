@@ -46,7 +46,7 @@
 
 /* Includes ------------------------------------------------------------------*/
 #include "stm32f4xx.h"
-#include "Legacy/stm32_hal_legacy.h"
+#include "legacy/stm32_hal_legacy.h"
 #include <stdio.h>
 
 /* Exported types ------------------------------------------------------------*/
