@@ -38,7 +38,7 @@ GDB = arm-none-eabi-gdb
 OBJCOPY = arm-none-eabi-objcopy
 OBJDUMP = arm-none-eabi-objdump
 SIZE = arm-none-eabi-size
-REMOVE  = rm -rfv
+REMOVE  = rm -fv
 STFLASH = st-flash
 
 
@@ -69,7 +69,7 @@ LD_FLAGS += -Wl,--start-group -lc -lgcc -lnosys -Wl,--end-group
 # Targets: Actions
 ############################################################
 .SUFFIXES: .bin .c .elf .eep .h .hex .o .elf .s
-.PHONY: all bin dep elf flash clean
+.PHONY: all bin dep elf flash clean clean-lib clean-all
 
 all: elf
 
@@ -84,8 +84,13 @@ erase:
 	$(STFLASH) erase
 
 clean:
-	$(REMOVE) src/*.o src/**/*.o lib/**/src/*.o lib/**/src/**/*.o *.elf *.hex *.bin
+	find src -name "*.o" -exec $(REMOVE) {} \;
+	$(REMOVE) *.elf *.hex *.bin
 
+clean-lib:
+	find lib -name "*.o" -exec $(REMOVE) {} \;
+
+clean-all: clean clean-lib
 
 ############################################################
 # Targets: Output
