@@ -26,8 +26,6 @@ main(void)
 {
 	daq_init();
 
-	HAL_GPIO_WritePin(GPIOD, GPIO_PIN_12, GPIO_PIN_SET);
-
 	for (;;) {
 
 	}
@@ -44,7 +42,7 @@ daq_clock_init(void)
 	RCC_ClkInitTypeDef rcc_clk_init;
 
 	/* Enable power controller peripheral clock */
-	__PWR_CLK_ENABLE();
+	__HAL_RCC_PWR_CLK_ENABLE();
 
 	/* Ensure maximum clock frequency is not limited */
 	__HAL_PWR_VOLTAGESCALING_CONFIG(PWR_REGULATOR_VOLTAGE_SCALE1);
@@ -90,10 +88,10 @@ daq_gpio_init(void)
 	GPIO_InitTypeDef gpio_init;
 
 	/* Enable GPIO port D peripheral clock */
-	__GPIOD_CLK_ENABLE();
+	__HAL_RCC_GPIOD_CLK_ENABLE();
 
 	/* Configure LED pin */
-	gpio_init.Pin   = GPIO_PIN_12;
+	gpio_init.Pin   = GPIO_PIN_12 | GPIO_PIN_13 | GPIO_PIN_14 | GPIO_PIN_15;
 	gpio_init.Mode  = GPIO_MODE_OUTPUT_PP;
 	gpio_init.Pull  = GPIO_PULLUP;
 	gpio_init.Speed = GPIO_SPEED_FAST;
@@ -103,8 +101,44 @@ daq_gpio_init(void)
 
 
 void
+daq_timer_init(void)
+{
+	TIM_HandleTypeDef timer_handle;
+
+	HAL_NVIC_SetPriority(TIM1_CC_IRQn, 0, 1);
+	HAL_NVIC_EnableIRQ(TIM2_IRQn);
+
+	/* Enabled TIM2 peripheral clock */
+	__HAL_RCC_TIM2_CLK_ENABLE();
+
+	timer_handle.Instance = TIM2;
+	timer_handle.Init.CounterMode = TIM_COUNTERMODE_UP;
+	timer_handle.Init.Period = 1000 - 1;
+	timer_handle.Init.Prescaler = (uint32_t) ((SystemCoreClock /2) / 10000) - 1;
+    timer_handle.Init.ClockDivision = 0;
+    timer_handle.Init.RepetitionCounter = 0;
+
+	HAL_TIM_Base_Init(&timer_handle);
+	HAL_TIM_Base_Start_IT(&timer_handle);
+}
+
+
+void
 daq_init(void)
 {
 	daq_clock_init();
 	daq_gpio_init();
+	daq_timer_init();
+}
+
+
+extern void
+TIM2_IRQHandler(void)
+{
+	if ((TIM2->SR & TIM_SR_UIF) != 0) {
+		
+		TIM2->SR &= ~(TIM_SR_UIF);
+
+		HAL_GPIO_TogglePin(GPIOD, GPIO_PIN_12 | GPIO_PIN_13 | GPIO_PIN_14 | GPIO_PIN_15);
+	}
 }
