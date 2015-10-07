@@ -56,6 +56,30 @@ Now you can load and run the firmware:
     $ load
     $ continue
 
+## Libraries
+
+The following libraries are included in the source tree:
+
+- **cmsis**: ARM's Cortex Microcontroller Software Interface Standard provides a
+  hardware abstraction layer for Cortex-M microcontrollers. `stm32f407xx.h`
+  provides all of the register definitions and includes the appropriate CMSIS
+  files for the Cortex-M4 core within the STM32F4.
+
+- **fat**: FAT filesystem library.
+
+- **hal**: ST's hardware abstraction library for the STM32F407. This provides
+  relatively simple interfaces to all of the microcontroller's peripherals. Many
+  examples are available which makes this library the ideal choice for this
+  project.
+
+- **ld**: linker scripts to define the memory spaces, stack and heap sizes, and
+  determine which data goes where.
+
+- **usb**: USB device library which provides basic USB functionality as well as
+  Communications Device Class (CDC), Device Firmware Update (DFU), and Mass
+  Storage Class (MSC) device classes. This is used to configure and retreive
+  data from the DAQ and upgrade the firmware.
+
 ## References
 
 The following documents will be essential to DAQ firmware development:
