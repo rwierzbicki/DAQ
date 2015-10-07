@@ -24,6 +24,8 @@
 #include <stdint.h>
 #include <stdlib.h>
 
+#include "stm32f4xx_hal.h"
+
 #include "daq_acc.h"
 #include "daq_adc.h"
 #include "daq_can.h"
@@ -36,6 +38,9 @@
 #include "daq_spi.h"
 #include "daq_uart.h"
 #include "daq_usb.h"
+
+
+void daq_init(void);
 
 
 #endif
