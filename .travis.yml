@@ -4,15 +4,11 @@ addons:
     - lib32ncurses5
     - lib32z1
 
-env:
-  - BUILD=firmware
-  - BUILD=software
-
 install:
   - wget https://launchpad.net/gcc-arm-embedded/4.9/4.9-2015-q2-update/+download/gcc-arm-none-eabi-4_9-2015q2-20150609-linux.tar.bz2
   - tar xf gcc-arm-none-eabi-4_9-2015q2-20150609-linux.tar.bz2
   - export PATH=$PATH:$PWD/gcc-arm-none-eabi-4_9-2015q2/bin
 
 script:
-  - cd $BUILD
+  - cd firmware
   - make
