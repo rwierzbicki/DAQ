@@ -8,7 +8,7 @@ DEVICE  = STM32F407xx
 ############################################################
 # Compiler Options
 ############################################################
-OPTIMIZATION = s
+OPTIMIZATION = 3
 STANDARD     = c11
 ARCH         = -march=armv7e-m -mthumb -mcpu=cortex-m4
 FP           = -mfloat-abi=hard -mfpu=fpv4-sp-d16
@@ -23,8 +23,8 @@ LDSCRIPT     = stm32f407vg_flash.ld
 ############################################################
 # Directories
 ############################################################
-INCLUDE_DIR   = ./include ./lib/cmsis/include ./lib/hal/include
-SOURCE_DIR    = ./src ./lib/cmsis/src ./lib/hal/src
+INCLUDE_DIR   = ./include ./lib/cmsis/include ./lib/hal/include ./lib/usb/include
+SOURCE_DIR    = ./src ./lib/cmsis/src ./lib/hal/src ./lib/usb/src
 LDSCRIPT_DIR  = ./lib/ld
 
 
@@ -84,7 +84,7 @@ erase:
 	$(STFLASH) erase
 
 clean:
-	$(REMOVE) src/*.o src/**/*.o *.elf *.hex *.bin
+	$(REMOVE) src/*.o src/**/*.o lib/**/src/*.o lib/**/src/**/*.o *.elf *.hex *.bin
 
 
 ############################################################

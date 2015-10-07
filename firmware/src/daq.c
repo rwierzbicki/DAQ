@@ -64,10 +64,10 @@ daq_clock_init(void)
 	HAL_RCC_OscConfig(&rcc_osc_init);
 
 	/* Use PLL as system clock source */
-	rcc_clk_init.ClockType   = (RCC_CLOCKTYPE_SYSCLK |
-		                        RCC_CLOCKTYPE_HCLK |
-		                        RCC_CLOCKTYPE_PCLK1 |
-		                        RCC_CLOCKTYPE_PCLK2);
+	rcc_clk_init.ClockType = (RCC_CLOCKTYPE_SYSCLK |
+		                      RCC_CLOCKTYPE_HCLK |
+		                      RCC_CLOCKTYPE_PCLK1 |
+		                      RCC_CLOCKTYPE_PCLK2);
 	rcc_clk_init.SYSCLKSource = RCC_SYSCLKSOURCE_PLLCLK;
 
 	/* Configure peripheral clock dividers */
@@ -115,8 +115,8 @@ daq_timer_init(void)
 	timer_handle.Init.CounterMode = TIM_COUNTERMODE_UP;
 	timer_handle.Init.Period = 1000 - 1;
 	timer_handle.Init.Prescaler = (uint32_t) ((SystemCoreClock /2) / 10000) - 1;
-    timer_handle.Init.ClockDivision = 0;
-    timer_handle.Init.RepetitionCounter = 0;
+	timer_handle.Init.ClockDivision = 0;
+	timer_handle.Init.RepetitionCounter = 0;
 
 	HAL_TIM_Base_Init(&timer_handle);
 	HAL_TIM_Base_Start_IT(&timer_handle);
