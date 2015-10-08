@@ -8,7 +8,7 @@ DEVICE  = STM32F407xx
 ############################################################
 # Compiler Options
 ############################################################
-OPTIMIZATION = 3
+OPTIMIZATION = 0
 STANDARD     = c11
 ARCH         = -march=armv7e-m -mthumb -mcpu=cortex-m4
 FP           = -mfloat-abi=hard -mfpu=fpv4-sp-d16

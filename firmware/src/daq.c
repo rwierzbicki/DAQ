@@ -20,6 +20,8 @@
 
 #include "daq.h"
 
+uint16_t values[2];
+
 
 int
 main(void)
@@ -83,6 +85,69 @@ daq_clock_init(void)
 
 
 void
+daq_adc_init(void)
+{
+	/* Enable ADC1 periperhal clock */
+	RCC->APB2ENR |= RCC_APB2ENR_ADC1EN;
+
+	HAL_NVIC_SetPriority(ADC_IRQn, 0, 1);
+	HAL_NVIC_EnableIRQ(ADC_IRQn);
+
+	/* Disable EOC interrupt */
+	ADC1->CR1 &= ~ADC_CR1_EOCIE;
+
+	/* Enable scan mode */
+	ADC1->CR1 |= ADC_CR1_SCAN;
+
+	/* Enable external trigger on rising edge of TIM2 TRGO */
+	ADC1->CR2 |= ADC_CR2_EXTEN_0 | ADC_CR2_EXTSEL_1 | ADC_CR2_EXTSEL_2;
+
+	/* Enable DMA mode, issue requests for every transfer */
+	ADC1->CR2 |= ADC_CR2_DMA | ADC_CR2_DDS;
+
+	/* Sample channel 1 and 2 for 28 cycles */
+	ADC1->SQR1 |= ADC_SQR1_L_0;
+	ADC1->SQR3 = ADC_SQR3_SQ1_0 | ADC_SQR3_SQ2_1;
+	ADC1->SMPR2 = ADC_SMPR2_SMP1_1 | ADC_SMPR2_SMP2_1;
+
+	/* Power ADC on */
+	ADC1->CR2 |= ADC_CR2_ADON;
+}
+
+
+void
+daq_dma_init(void)
+{
+	HAL_NVIC_SetPriority(DMA2_Stream0_IRQn, 0, 1);
+	HAL_NVIC_EnableIRQ(DMA2_Stream0_IRQn);
+
+	/* Enable DMA2 peripheral clock */
+	RCC->AHB1ENR |= RCC_AHB1ENR_DMA2EN;
+
+	/* Select channel 0 (ADC1) for DMA2 stream 0 */
+	DMA2_Stream0->CR &= ~DMA_SxCR_CHSEL;
+
+	/* Configure DMA2 stream 0 for circular, half-word, memory-incrementing */
+	DMA2_Stream0->CR |= DMA_SxCR_MINC | DMA_SxCR_CIRC | DMA_SxCR_MSIZE_0 | DMA_SxCR_PSIZE_0;
+
+	/* Enable DMA2 stream 0 transfer complete interrupt */
+	DMA2_Stream0->CR |= DMA_SxCR_TCIE;
+
+	/* Set DMA2 stream 0 source peripheral address to ADC1 DR */
+	DMA2_Stream0->PAR = (uint32_t) &ADC1->DR;
+	
+	/* Set DMA2 stream 0 target memory address */
+	DMA2_Stream0->M0AR = (uint32_t) &values;
+
+	/* Tranfer 2 items per DMA2 stream 0 request */
+	DMA2_Stream0->NDTR = 2;
+
+	/* Enable DMA2 stream 0 */
+	DMA2_Stream0->CR |= DMA_SxCR_EN;
+}
+
+
+void
 daq_gpio_init(void)
 {
 	GPIO_InitTypeDef gpio_init;
@@ -97,6 +162,15 @@ daq_gpio_init(void)
 	gpio_init.Speed = GPIO_SPEED_FAST;
 
 	HAL_GPIO_Init(GPIOD, &gpio_init);
+
+	/* Enable GPIO port A peripheral clock */
+	__HAL_RCC_GPIOA_CLK_ENABLE();
+
+	gpio_init.Pin   = GPIO_PIN_1 | GPIO_PIN_2;
+	gpio_init.Mode  = GPIO_MODE_ANALOG;
+	gpio_init.Pull  = GPIO_NOPULL;
+
+	HAL_GPIO_Init(GPIOA, &gpio_init);
 }
 
 
@@ -113,10 +187,12 @@ daq_timer_init(void)
 
 	timer_handle.Instance = TIM2;
 	timer_handle.Init.CounterMode = TIM_COUNTERMODE_UP;
-	timer_handle.Init.Period = 1000 - 1;
+	timer_handle.Init.Period = 500 - 1;
 	timer_handle.Init.Prescaler = (uint32_t) ((SystemCoreClock /2) / 10000) - 1;
 	timer_handle.Init.ClockDivision = 0;
 	timer_handle.Init.RepetitionCounter = 0;
+
+	TIM2->CR2 |= TIM_CR2_MMS_1;
 
 	HAL_TIM_Base_Init(&timer_handle);
 	HAL_TIM_Base_Start_IT(&timer_handle);
@@ -129,16 +205,35 @@ daq_init(void)
 	daq_clock_init();
 	daq_gpio_init();
 	daq_timer_init();
+	daq_dma_init();
+	daq_adc_init();
 }
 
 
 extern void
 TIM2_IRQHandler(void)
 {
-	if ((TIM2->SR & TIM_SR_UIF) != 0) {
+	if ((TIM2->SR & TIM_SR_UIF)) {
 		
-		TIM2->SR &= ~(TIM_SR_UIF);
+		TIM2->SR &= ~TIM_SR_UIF;
 
-		HAL_GPIO_TogglePin(GPIOD, GPIO_PIN_12 | GPIO_PIN_13 | GPIO_PIN_14 | GPIO_PIN_15);
+		HAL_GPIO_TogglePin(GPIOD, GPIO_PIN_12);
+	}
+}
+
+
+extern void
+DMA2_Stream0_IRQHandler(void)
+{
+	if ((DMA2->LISR & DMA_LISR_TCIF0)) {
+		HAL_GPIO_TogglePin(GPIOD, GPIO_PIN_13);
+
+		DMA2->LIFCR |= DMA_LIFCR_CTCIF0;
+
+		if (values[0] > 255) HAL_GPIO_WritePin(GPIOD, GPIO_PIN_14, GPIO_PIN_SET);
+		else  HAL_GPIO_WritePin(GPIOD, GPIO_PIN_14, GPIO_PIN_RESET);
+
+		if (values[1] > 255) HAL_GPIO_WritePin(GPIOD, GPIO_PIN_15, GPIO_PIN_SET);
+		else  HAL_GPIO_WritePin(GPIOD, GPIO_PIN_15, GPIO_PIN_RESET);
 	}
 }
