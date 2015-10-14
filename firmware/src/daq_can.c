@@ -16,3 +16,20 @@
   You should have received a copy of the GNU General Public License along with
   this program.  If not, see <http://www.gnu.org/licenses/>.
 */
+
+
+#include "daq.h"
+
+
+void
+daq_can_init(void)
+{
+	/* Enable CAN1 peripheral clock */
+	RCC->APB1ENR |= RCC_APB1ENR_CAN1EN;
+
+	/* Exit sleep mode */
+	CAN1->MCR &= ~CAN_MCR_SLEEP;
+
+	/* Request initialization of the CAN hardware */
+	CAN1->MCR |= CAN_MCR_INRQ;
+}

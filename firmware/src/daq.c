@@ -20,7 +20,8 @@
 
 #include "daq.h"
 
-uint16_t values[2];
+volatile uint16_t values[2];
+volatile uint8_t running = 1;
 
 
 int
@@ -85,37 +86,6 @@ daq_clock_init(void)
 
 
 void
-daq_adc_init(void)
-{
-	/* Enable ADC1 periperhal clock */
-	RCC->APB2ENR |= RCC_APB2ENR_ADC1EN;
-
-	HAL_NVIC_SetPriority(ADC_IRQn, 0, 1);
-	HAL_NVIC_EnableIRQ(ADC_IRQn);
-
-	/* Disable EOC interrupt */
-	ADC1->CR1 &= ~ADC_CR1_EOCIE;
-
-	/* Enable scan mode */
-	ADC1->CR1 |= ADC_CR1_SCAN;
-
-	/* Enable external trigger on rising edge of TIM2 TRGO */
-	ADC1->CR2 |= ADC_CR2_EXTEN_0 | ADC_CR2_EXTSEL_1 | ADC_CR2_EXTSEL_2;
-
-	/* Enable DMA mode, issue requests for every transfer */
-	ADC1->CR2 |= ADC_CR2_DMA | ADC_CR2_DDS;
-
-	/* Sample channel 1 and 2 for 28 cycles */
-	ADC1->SQR1 |= ADC_SQR1_L_0;
-	ADC1->SQR3 = ADC_SQR3_SQ1_0 | ADC_SQR3_SQ2_1;
-	ADC1->SMPR2 = ADC_SMPR2_SMP1_1 | ADC_SMPR2_SMP2_1;
-
-	/* Power ADC on */
-	ADC1->CR2 |= ADC_CR2_ADON;
-}
-
-
-void
 daq_dma_init(void)
 {
 	HAL_NVIC_SetPriority(DMA2_Stream0_IRQn, 0, 1);
@@ -171,6 +141,15 @@ daq_gpio_init(void)
 	gpio_init.Pull  = GPIO_NOPULL;
 
 	HAL_GPIO_Init(GPIOA, &gpio_init);
+
+	/* Enable GPIO port A pin 0 as input */
+	__HAL_RCC_SYSCFG_CLK_ENABLE();
+
+	EXTI->IMR |= EXTI_IMR_MR0;
+	EXTI->RTSR |= EXTI_RTSR_TR0;
+
+	HAL_NVIC_SetPriority(EXTI0_IRQn, 0, 1);
+	HAL_NVIC_EnableIRQ(EXTI0_IRQn);
 }
 
 
@@ -196,6 +175,21 @@ daq_timer_init(void)
 
 	HAL_TIM_Base_Init(&timer_handle);
 	HAL_TIM_Base_Start_IT(&timer_handle);
+
+	/* Enable TIM3 peripheral clock */
+	RCC->APB1ENR |= RCC_APB1ENR_TIM3EN;
+
+	/* Put TIM3 into one-pulse mode */
+	TIM3->CR1 |= TIM_CR1_OPM;
+
+	/* Enable update interrupt */
+	TIM3->DIER |= TIM_DIER_UIE;
+
+	TIM3->PSC = (uint32_t) ((SystemCoreClock / 2) / 10000) - 1;
+	TIM3->ARR = 50 - 1;
+
+	HAL_NVIC_SetPriority(TIM3_IRQn, 0, 1);
+	HAL_NVIC_EnableIRQ(TIM3_IRQn);
 }
 
 
@@ -210,30 +204,77 @@ daq_init(void)
 }
 
 
-extern void
+void
 TIM2_IRQHandler(void)
 {
-	if ((TIM2->SR & TIM_SR_UIF)) {
-		
-		TIM2->SR &= ~TIM_SR_UIF;
-
+	if (TIM2->SR & TIM_SR_UIF) {
 		HAL_GPIO_TogglePin(GPIOD, GPIO_PIN_12);
+
+		/* Clear pending interrupt */
+		TIM2->SR &= ~TIM_SR_UIF;
+	}
+}
+
+void
+TIM3_IRQHandler(void)
+{
+	if (TIM3->SR & TIM_SR_UIF) {
+		/* Check button press */
+		if (GPIOA->IDR & GPIO_IDR_IDR_0) {
+
+			if (running) {
+				/* Stop timer */
+				TIM2->CR1 &= ~TIM_CR1_CEN;
+
+				/* Turn off add LEDs */
+				HAL_GPIO_WritePin(GPIOD, GPIO_PIN_12 | GPIO_PIN_13 | GPIO_PIN_14 | GPIO_PIN_15, GPIO_PIN_RESET);
+
+				running = 0;
+			} else {
+				/* Start timer */
+				TIM2->CR1 |= TIM_CR1_CEN;
+
+				running = 1;
+			}
+		}
+
+		/* Unmask EXTI0 interrupt */
+		EXTI->IMR |= EXTI_IMR_MR0;
+
+		/* Clear pending interrupt */
+		TIM3->SR &= ~TIM_SR_UIF;
 	}
 }
 
 
-extern void
+void
 DMA2_Stream0_IRQHandler(void)
 {
-	if ((DMA2->LISR & DMA_LISR_TCIF0)) {
+	if (DMA2->LISR & DMA_LISR_TCIF0) {
 		HAL_GPIO_TogglePin(GPIOD, GPIO_PIN_13);
-
-		DMA2->LIFCR |= DMA_LIFCR_CTCIF0;
 
 		if (values[0] > 255) HAL_GPIO_WritePin(GPIOD, GPIO_PIN_14, GPIO_PIN_SET);
 		else  HAL_GPIO_WritePin(GPIOD, GPIO_PIN_14, GPIO_PIN_RESET);
 
 		if (values[1] > 255) HAL_GPIO_WritePin(GPIOD, GPIO_PIN_15, GPIO_PIN_SET);
 		else  HAL_GPIO_WritePin(GPIOD, GPIO_PIN_15, GPIO_PIN_RESET);
+
+		/* Clear pending interrupt */
+		DMA2->LIFCR |= DMA_LIFCR_CTCIF0;
+	}
+}
+
+void
+EXTI0_IRQHandler(void)
+{
+	if (EXTI->PR & EXTI_PR_PR0) {
+		/* Mask EXTI0 interrupt */
+		EXTI->IMR |= EXTI_IMR_MR0;
+
+		/* Start TIM3 to debounce */
+		TIM3->CR1 |= TIM_CR1_CEN;
+
+		/* Clear pending interrupt */
+		EXTI->PR |= EXTI_PR_PR0;
 	}
 }
