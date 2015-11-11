@@ -69,7 +69,7 @@ LD_FLAGS += -Wl,--start-group -lc -lgcc -lnosys -Wl,--end-group
 # Targets: Actions
 ############################################################
 .SUFFIXES: .bin .c .elf .eep .h .hex .o .elf .s
-.PHONY: all bin dep elf flash clean clean-lib clean-all
+.PHONY: all bin dep elf flash clean clean-lib clean-all disasm disasm-all
 
 all: elf
 
@@ -85,12 +85,18 @@ erase:
 
 clean:
 	find src -name "*.o" -exec $(REMOVE) {} \;
-	$(REMOVE) *.elf *.hex *.bin
+	$(REMOVE) *.elf *.hex *.bin *.S
 
 clean-lib:
 	find lib -name "*.o" -exec $(REMOVE) {} \;
 
 clean-all: clean clean-lib
+
+disasm:
+	$(OBJDUMP) -d $(PROJECT).elf > $(PROJECT).S
+
+disasm-all:
+	$(OBJDUMP) -D $(PROJECT).elf > $(PROJECT).S
 
 ############################################################
 # Targets: Output
