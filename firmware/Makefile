@@ -8,7 +8,7 @@ DEVICE  = STM32F407xx
 ############################################################
 # Compiler Options
 ############################################################
-OPTIMIZATION = 0
+OPTIMIZATION = s
 STANDARD     = c11
 ARCH         = -march=armv7e-m -mthumb -mcpu=cortex-m4
 FP           = -mfloat-abi=hard -mfpu=fpv4-sp-d16
@@ -53,7 +53,7 @@ O_FILES = $(C_FILES:.c=.o) $(S_FILES:.s=.o)
 ############################################################
 # Tool Flags
 ############################################################
-CC_FLAGS  = -g -Os
+CC_FLAGS  = -g -O$(OPTIMIZATION)
 CC_FLAGS += -D$(DEVICE)
 CC_FLAGS += -std=$(STANDARD) $(ARCH) $(FP)
 CC_FLAGS += -ffunction-sections -fdata-sections -Wall -Wstrict-prototypes
@@ -62,7 +62,7 @@ CC_FLAGS += $(patsubst %,-I%,$(INCLUDE_DIR)) -I.
 LD_FLAGS  = $(ARCH) $(FP)
 LD_FLAGS += -L$(LDSCRIPT_DIR) -T$(LDSCRIPT)
 LD_FLAGS += --static
-LD_FLAGS += -Wl,--start-group -lc -lgcc -lnosys -Wl,--end-group
+LD_FLAGS += -lc -lgcc -lnosys -nostartfiles -Wl,--gc-sections
 
 
 ############################################################

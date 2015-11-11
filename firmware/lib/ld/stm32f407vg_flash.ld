@@ -78,6 +78,7 @@ SECTIONS
     __exidx_end = .;
   } >FLASH
 
+  /*
   .preinit_array     :
   {
     PROVIDE_HIDDEN (__preinit_array_start = .);
@@ -98,7 +99,8 @@ SECTIONS
     KEEP (*(.fini_array*))
     PROVIDE_HIDDEN (__fini_array_end = .);
   } >FLASH
-
+  */
+  
   /* used by the startup to initialize data */
   _sidata = LOADADDR(.data);
 
